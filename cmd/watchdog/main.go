@@ -1,10 +1,14 @@
 package main
 
 import (
+	"os"
+
 	"git.sr.ht/~mcldresner/tfdog/config"
 	"git.sr.ht/~mcldresner/tfdog/handler"
+	"git.sr.ht/~mcldresner/tfdog/logger"
 	"git.sr.ht/~mcldresner/tfdog/middleware"
 	"git.sr.ht/~mcldresner/tfdog/scheduler"
+	"go.uber.org/zap"
 	tb "gopkg.in/tucnak/telebot.v2"
 )
 
@@ -14,7 +18,18 @@ func main() {
 		panic(err)
 	}
 
-	poller := &tb.LongPoller{Timeout: cfg.PollerTimeout}
+	l, err := logger.NewLogger(&cfg.Logger)
+	if err != nil {
+		panic(err)
+	}
+	defer l.Sync()
+
+	zap.ReplaceGlobals(l)
+
+	poller := &tb.LongPoller{
+		Timeout:        cfg.PollerTimeout,
+		AllowedUpdates: []string{"message", "callback_query"},
+	}
 	mid := tb.NewMiddlewarePoller(poller, middleware.BuildMiddlewares(
 		middleware.WithValidator(),
 	))
@@ -25,7 +40,8 @@ func main() {
 		Synchronous: false,
 	})
 	if err != nil {
-		panic(err)
+		l.With(zap.Error(err)).Fatal("failed to create bot")
+		os.Exit(1)
 	}
 
 	sc := scheduler.NewScheduler(cfg.SchedulerInterval)

@@ -2,12 +2,11 @@ package handler
 
 import (
 	"fmt"
-	"log"
 
 	"git.sr.ht/~mcldresner/tfdog/scheduler"
 	"git.sr.ht/~mcldresner/tfdog/tfbeta"
-
 	"github.com/google/uuid"
+	"go.uber.org/zap"
 	tb "gopkg.in/tucnak/telebot.v2"
 )
 
@@ -23,17 +22,24 @@ func NewHandler(s *scheduler.Scheduler, b *tb.Bot) *Handler {
 
 func (h *Handler) Subscribe(m *tb.Message) error {
 	if len(m.Payload) == 0 {
-		_, _ = h.bot.Send(
+		_, err := h.bot.Send(
 			m.Sender,
 			"Please, specify TestFlight link.\n"+
 				"Example:\n`/subscribe https://testflight.apple.com/join/u6iogfd0`",
 			tb.ModeMarkdown,
 		)
+
+		if err != nil {
+			zap.L().With(zap.Error(err)).Error("failed to send message")
+			return err
+		}
+
+		return nil
 	}
 
 	beta, err := tfbeta.NewTFBeta(m.Payload)
 	if err != nil {
-		log.Printf("failed to create beta: %s", err)
+		zap.L().With(zap.Error(err)).Error("failed to create beta")
 		return err
 	}
 	name := beta.GetAppName()
@@ -44,7 +50,7 @@ func (h *Handler) Subscribe(m *tb.Message) error {
 		isFull, err := beta.IsFull()
 		if err != nil {
 			_, _ = bot.Send(sender, "error occurred: "+err.Error())
-			log.Printf("failed to check whether beta is full or not: %s", err)
+			zap.L().With(zap.Error(err)).Error("failed to check beta")
 			return
 		}
 
@@ -60,7 +66,8 @@ func (h *Handler) Subscribe(m *tb.Message) error {
 				tb.ModeMarkdown,
 			)
 			if err != nil {
-				log.Printf("failed to send message: %s", err)
+				zap.L().With(zap.Error(err)).Error("failed to send message")
+				return
 			}
 		}
 	})
@@ -80,7 +87,7 @@ func (h *Handler) Subscribe(m *tb.Message) error {
 		tb.ModeMarkdown,
 	)
 	if err != nil {
-		log.Printf("failed to send message: %s", err)
+		zap.L().With(zap.Error(err)).Error("failed to send message")
 		return err
 	}
 
@@ -105,7 +112,7 @@ func (h *Handler) sendSubscriptionList(sender *tb.User) error {
 
 	_, err := h.bot.Send(sender, text, markup)
 	if err != nil {
-		log.Printf("failed to send message: %s", err)
+		zap.L().With(zap.Error(err)).Error("failed to send message")
 		return err
 	}
 	return nil
@@ -115,13 +122,16 @@ func (h *Handler) UnsubscribeInline(c *tb.Callback) {
 	resp := &tb.CallbackResponse{
 		CallbackID: c.ID,
 		ShowAlert:  true,
+		Text:       "id is invalid",
 	}
+	defer h.bot.Respond(c, resp)
 
 	id, err := uuid.Parse(c.Data[1:])
 	if err != nil {
-		resp.Text = "id is invalid"
-		log.Printf("failed to parse id: data = %s, err = %s", c.Data, err)
-		_ = h.bot.Respond(c, resp)
+		zap.L().
+			With(zap.Error(err)).
+			With(zap.String("data", c.Data)).
+			Error("failed to parse id")
 		return
 	}
 
@@ -130,13 +140,16 @@ func (h *Handler) UnsubscribeInline(c *tb.Callback) {
 
 	resp.Text = "Successfully unsubscribed"
 	resp.ShowAlert = false
-	_ = h.bot.Respond(c, resp)
 
 	err = h.bot.Delete(c.Message)
 	if err != nil {
-		log.Printf("failed to delete message: %s", err)
+		zap.L().With(zap.Error(err)).Error("failed to delete message")
 		return
 	}
 
-	_ = h.sendSubscriptionList(c.Sender)
+	err = h.sendSubscriptionList(c.Sender)
+	if err != nil {
+		zap.L().With(zap.Error(err)).Error("failed to send subscription list")
+		return
+	}
 }

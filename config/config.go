@@ -13,6 +13,7 @@ type Config struct {
 	HelpText          string        `env:"HELP_TEXT,required"`
 	StartText         string        `env:"START_TEXT,required"`
 	SchedulerInterval time.Duration `env:"SCHEDULER_INTERVAL" envDefault:"3m"`
+	Logger
 }
 
 // ParseConfig parses a config.
@@ -22,4 +23,9 @@ func ParseConfig() (*Config, error) {
 		return nil, err
 	}
 	return cfg, nil
+}
+
+// Logger is logger config.
+type Logger struct {
+	IsProduction bool `env:"LOGGER_PRODUCTION,required"`
 }
