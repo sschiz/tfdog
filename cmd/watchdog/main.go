@@ -1,8 +1,7 @@
 package main
 
 import (
-	"time"
-
+	"git.sr.ht/~mcldresner/tfdog/config"
 	"git.sr.ht/~mcldresner/tfdog/handler"
 	"git.sr.ht/~mcldresner/tfdog/middleware"
 	"git.sr.ht/~mcldresner/tfdog/scheduler"
@@ -10,13 +9,18 @@ import (
 )
 
 func main() {
-	poller := &tb.LongPoller{Timeout: 10 * time.Second}
+	cfg, err := config.ParseConfig()
+	if err != nil {
+		panic(err)
+	}
+
+	poller := &tb.LongPoller{Timeout: cfg.PollerTimeout}
 	mid := tb.NewMiddlewarePoller(poller, middleware.BuildMiddlewares(
 		middleware.WithValidator(),
 	))
 
 	b, err := tb.NewBot(tb.Settings{
-		Token:       "token here",
+		Token:       cfg.Token,
 		Poller:      mid,
 		Synchronous: false,
 	})
@@ -24,35 +28,17 @@ func main() {
 		panic(err)
 	}
 
-	sc := scheduler.NewScheduler(3 * time.Minute)
+	sc := scheduler.NewScheduler(cfg.SchedulerInterval)
 	h := handler.NewHandler(sc, b)
 
 	b.Handle("/subscribe", handler.ErrorMiddleware(h.Subscribe, b))
 	b.Handle("/unsubscribe", handler.ErrorMiddleware(h.Unsubscribe, b))
 	b.Handle(tb.OnCallback, h.UnsubscribeInline)
 
-	b.Handle("/ping", func(m *tb.Message) {
-		_, _ = b.Send(m.Chat, "Pong!")
-	})
-	b.Handle("/help", help(b))
-	b.Handle("/start", help(b))
+	b.Handle("/ping", handler.Stringer(b, "pong!"))
+	b.Handle("/help", handler.Stringer(b, cfg.HelpText))
+	b.Handle("/start", handler.Stringer(b, cfg.StartText))
 
 	sc.Start()
 	b.Start()
-}
-
-const helpText = `
-TestFlight Watcher is a bot that let you to periodically check whether TestFlight beta is full.
-If beta is not full, the bot will send notifications about it.
-
-/subscribe [beta link] - subscribe to notifications about beta fullness
-/unsubscribe - unsubscribe from notifications
-/ping - pong!
-/help - get help
-`
-
-func help(bot *tb.Bot) func(*tb.Message) {
-	return func(msg *tb.Message) {
-		_, _ = bot.Send(msg.Sender, helpText)
-	}
 }
