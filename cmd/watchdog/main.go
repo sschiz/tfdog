@@ -4,15 +4,20 @@ import (
 	"time"
 
 	"git.sr.ht/~mcldresner/tfdog/handler"
+	"git.sr.ht/~mcldresner/tfdog/middleware"
 	"git.sr.ht/~mcldresner/tfdog/scheduler"
-
 	tb "gopkg.in/tucnak/telebot.v2"
 )
 
 func main() {
+	poller := &tb.LongPoller{Timeout: 10 * time.Second}
+	mid := tb.NewMiddlewarePoller(poller, middleware.BuildMiddlewares(
+		middleware.WithValidator(),
+	))
+
 	b, err := tb.NewBot(tb.Settings{
 		Token:       "token here",
-		Poller:      &tb.LongPoller{Timeout: 10 * time.Second},
+		Poller:      mid,
 		Synchronous: false,
 	})
 	if err != nil {
@@ -22,8 +27,8 @@ func main() {
 	sc := scheduler.NewScheduler(3 * time.Minute)
 	h := handler.NewHandler(sc, b)
 
-	b.Handle("/subscribe", handler.ErrorMiddleware(handler.CheckerMiddleware(h.Subscribe), b))
-	b.Handle("/unsubscribe", handler.ErrorMiddleware(handler.CheckerMiddleware(h.Unsubscribe), b))
+	b.Handle("/subscribe", handler.ErrorMiddleware(h.Subscribe, b))
+	b.Handle("/unsubscribe", handler.ErrorMiddleware(h.Unsubscribe, b))
 	b.Handle(tb.OnCallback, h.UnsubscribeInline)
 
 	b.Handle("/ping", func(m *tb.Message) {
