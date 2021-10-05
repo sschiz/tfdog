@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -103,11 +104,13 @@ func getBot(cfg ini.File, log *zap.Logger, sc *scheduler.Scheduler) *tb.Bot {
 	if !ok {
 		cfgLog.Panic("config must contain help text field")
 	}
+	helpText = strings.ReplaceAll(helpText, "\\n", "\n")
 
 	startText, ok := botCfg["start_text"]
 	if !ok {
 		cfgLog.Panic("config must contain help text field")
 	}
+	startText = strings.ReplaceAll(helpText, "\\n", "\n")
 
 	b, err := bot.NewBot(
 		pollerTimeout,
