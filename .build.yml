@@ -1,0 +1,10 @@
+image: alpine/edge
+packages:
+  - go
+sources:
+  - https://git.sr.ht/~mcldresner/tfdog
+tasks:
+  - build: |
+      cd tfdog
+      go test -v ./...
+      test -z $(gofmt -l .)
