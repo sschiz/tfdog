@@ -104,7 +104,7 @@ func getBot(cfg ini.File, log *zap.Logger, sc *scheduler.Scheduler) *tb.Bot {
 		cfgLog.Panic("config must contain help text field")
 	}
 
-	startText, ok := botCfg["help_text"]
+	startText, ok := botCfg["start_text"]
 	if !ok {
 		cfgLog.Panic("config must contain help text field")
 	}
