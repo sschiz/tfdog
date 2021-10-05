@@ -1,4 +1,4 @@
-package handler
+package bot
 
 import (
 	"go.uber.org/zap"

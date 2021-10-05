@@ -1,4 +1,4 @@
-package handler
+package bot
 
 import (
 	"fmt"
@@ -10,17 +10,17 @@ import (
 	tb "gopkg.in/tucnak/telebot.v2"
 )
 
-type Handler struct {
+type handler struct {
 	sch  *scheduler.Scheduler
 	bot  *tb.Bot
 	subs *subscriptions
 }
 
-func NewHandler(s *scheduler.Scheduler, b *tb.Bot) *Handler {
-	return &Handler{sch: s, bot: b, subs: newSubscriptions()}
+func newHandler(s *scheduler.Scheduler, b *tb.Bot) *handler {
+	return &handler{sch: s, bot: b, subs: newSubscriptions()}
 }
 
-func (h *Handler) Subscribe(m *tb.Message) error {
+func (h *handler) Subscribe(m *tb.Message) error {
 	if len(m.Payload) == 0 {
 		_, err := h.bot.Send(
 			m.Sender,
@@ -94,7 +94,7 @@ func (h *Handler) Subscribe(m *tb.Message) error {
 	return nil
 }
 
-func (h *Handler) Unsubscribe(m *tb.Message) error {
+func (h *handler) Unsubscribe(m *tb.Message) error {
 	if err := h.sendSubscriptionList(m.Sender); err != nil {
 		return err
 	}
@@ -102,7 +102,7 @@ func (h *Handler) Unsubscribe(m *tb.Message) error {
 	return nil
 }
 
-func (h *Handler) sendSubscriptionList(sender *tb.User) error {
+func (h *handler) sendSubscriptionList(sender *tb.User) error {
 	markup := h.subs.GenerateReplyMarkup(sender.ID)
 	text := "List of subscriptions:"
 	if markup == nil {
@@ -118,13 +118,15 @@ func (h *Handler) sendSubscriptionList(sender *tb.User) error {
 	return nil
 }
 
-func (h *Handler) UnsubscribeInline(c *tb.Callback) {
+func (h *handler) UnsubscribeInline(c *tb.Callback) {
 	resp := &tb.CallbackResponse{
 		CallbackID: c.ID,
 		ShowAlert:  true,
 		Text:       "id is invalid",
 	}
-	defer h.bot.Respond(c, resp)
+	defer func(bot *tb.Bot, c *tb.Callback, resp *tb.CallbackResponse) {
+		_ = bot.Respond(c, resp)
+	}(h.bot, c, resp)
 
 	id, err := uuid.Parse(c.Data[1:])
 	if err != nil {

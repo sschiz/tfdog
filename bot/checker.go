@@ -1,4 +1,4 @@
-package handler
+package bot
 
 import (
 	tb "gopkg.in/tucnak/telebot.v2"
