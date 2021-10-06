@@ -24,11 +24,24 @@ func (h *handler) Subscribe(m *tb.Message) {
 
 	payload := NewBetaPayload(h.bot, m.Sender)
 	err := h.srv.Subscribe(m.Sender.ID, m.Payload, payload)
-	if err == nil || !errors.Is(err, service.ErrAlreadySubscribed) {
+	if err != nil {
+		if errors.Is(err, service.ErrAlreadySubscribed) {
+			_, err = h.bot.Send(m.Sender, "You have already subscribed this beta.")
+			if err != nil {
+				logger.With(zap.Error(err)).Error("failed to send message")
+				return
+			}
+		}
 		return
 	}
 
-	_, err = h.bot.Send(m.Sender, "You have already subscribed this beta.")
+	text := "⚡️ You have been subscribed the beta"
+	_, err = h.bot.Send(
+		m.Sender,
+		text,
+		tb.NoPreview,
+		tb.ModeMarkdown,
+	)
 	if err != nil {
 		logger.With(zap.Error(err)).Error("failed to send message")
 		return
