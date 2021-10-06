@@ -3,15 +3,16 @@ package bot
 import (
 	"time"
 
+	"git.sr.ht/~mcldresner/tfdog/service"
+
 	"git.sr.ht/~mcldresner/tfdog/middleware"
-	"git.sr.ht/~mcldresner/tfdog/scheduler"
 	tb "gopkg.in/tucnak/telebot.v2"
 )
 
 // NewBot constructs new bot.
 func NewBot(pollerTimeout time.Duration,
 	token string,
-	sc *scheduler.Scheduler,
+	srv service.Service,
 	helpText, startText string,
 ) (*tb.Bot, error) {
 	poller := &tb.LongPoller{
@@ -31,10 +32,10 @@ func NewBot(pollerTimeout time.Duration,
 		return nil, err
 	}
 
-	h := newHandler(sc, b)
+	h := newHandler(b, srv)
 
-	b.Handle("/subscribe", ErrorMiddleware(h.Subscribe, b))
-	b.Handle("/unsubscribe", ErrorMiddleware(h.Unsubscribe, b))
+	b.Handle("/subscribe", h.Subscribe)
+	b.Handle("/unsubscribe", h.Unsubscribe)
 	b.Handle(tb.OnCallback, h.UnsubscribeInline)
 
 	b.Handle("/ping", Stringer(b, "pong!"))

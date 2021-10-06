@@ -1,7 +1,8 @@
 package middleware
 
 import (
-	"github.com/google/uuid"
+	"strings"
+
 	tb "gopkg.in/tucnak/telebot.v2"
 )
 
@@ -12,25 +13,14 @@ func WithValidator() Middleware {
 			return false
 		}
 
-		if upd.Callback != nil && !validateCallback(upd.Callback) {
-			return false
-		}
-
 		return true
 	}
 }
 
 func validateMessage(m *tb.Message) bool {
-	return m.Private() && !m.Sender.IsBot
-}
-
-func validateCallback(c *tb.Callback) bool {
-	_, err := uuid.Parse(c.Data[1:])
-	if err != nil {
-		return false
+	condition := m.Private() && !m.Sender.IsBot
+	if strings.HasPrefix(m.Text, "/subscribe") {
+		condition = condition && len(m.Payload) != 0
 	}
-
-	c.Data = c.Data[1:]
-
-	return true
+	return condition
 }
