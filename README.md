@@ -6,7 +6,8 @@ If the beta has free slots, the bot will notify you about it.
 
 ## Installation
 Dependencies:
-- Go
+- go
+- gcc
 
 ```shell
 go install git.sr.ht/~mcldresner/tfdog/cmd/tfdog@latest
