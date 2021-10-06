@@ -18,7 +18,7 @@ func WithValidator() Middleware {
 }
 
 func validateMessage(m *tb.Message) bool {
-	if !m.Private() && m.Sender.IsBot {
+	if !m.Private() || m.Sender.IsBot {
 		return false
 	}
 
