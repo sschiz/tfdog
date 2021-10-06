@@ -6,7 +6,8 @@ import (
 	tb "gopkg.in/tucnak/telebot.v2"
 )
 
-func newBetaPayload(b *tb.Bot, chat tb.ChatID) func(*beta.Beta) {
+// NewBetaPayload returns beta payload.
+func NewBetaPayload(b *tb.Bot, chat tb.ChatID) func(*beta.Beta) {
 	return func(beta *beta.Beta) {
 		logger := zap.L().
 			Named("beta_payload").
