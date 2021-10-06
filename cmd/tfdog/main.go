@@ -8,11 +8,12 @@ import (
 	"syscall"
 	"time"
 
-	"git.sr.ht/~mcldresner/tfdog/bot"
+	"git.sr.ht/~mcldresner/tfdog/service"
+	"git.sr.ht/~mcldresner/tfdog/transport/bot"
+
 	"git.sr.ht/~mcldresner/tfdog/config"
 	"git.sr.ht/~mcldresner/tfdog/logger"
 	"git.sr.ht/~mcldresner/tfdog/repository"
-	"git.sr.ht/~mcldresner/tfdog/scheduler"
 	"git.sr.ht/~mcldresner/tfdog/version"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/vaughan0/go-ini"
@@ -27,14 +28,27 @@ func main() {
 		_ = log.Sync()
 	}(log)
 
-	sc := getScheduler(cfg, log)
-	b := getBot(cfg, log, sc)
-	_ = getRepository(cfg, log)
+	repo := getRepository(cfg, log)
+	defer func(repo repository.Repository) {
+		err := repo.Close()
+		if err != nil {
+			log.With(zap.Error(err)).Error("failed to close repository")
+		}
+	}(repo)
 
-	handleStop(sc, b, log)
+	srv := getService(cfg, log, repo)
+	defer func(srv service.Service) {
+		err := srv.Close()
+		if err != nil {
+			log.With(zap.Error(err)).Error("failed to close service")
+		}
+	}(srv)
+
+	b := getBot(cfg, log, srv)
+
+	handleStop(b, log)
 
 	log.Info("starting...")
-	sc.Start()
 	b.Start()
 }
 
@@ -86,7 +100,7 @@ func getLogger(cfg ini.File) *zap.Logger {
 	return log
 }
 
-func getBot(cfg ini.File, log *zap.Logger, sc *scheduler.Scheduler) *tb.Bot {
+func getBot(cfg ini.File, log *zap.Logger, srv service.Service) *tb.Bot {
 	cfgLog := log.Named("config").With(zap.String("section", "bot"))
 	botCfg := cfg.Section("bot")
 
@@ -119,7 +133,7 @@ func getBot(cfg ini.File, log *zap.Logger, sc *scheduler.Scheduler) *tb.Bot {
 	b, err := bot.NewBot(
 		pollerTimeout,
 		token,
-		sc,
+		srv,
 		helpText,
 		startText,
 	)
@@ -130,28 +144,7 @@ func getBot(cfg ini.File, log *zap.Logger, sc *scheduler.Scheduler) *tb.Bot {
 	return b
 }
 
-func getScheduler(cfg ini.File, log *zap.Logger) *scheduler.Scheduler {
-	value, ok := cfg.Get("scheduler", "interval")
-	if !ok {
-		log.
-			Named("config").
-			With(
-				zap.String("section", "scheduler"),
-			).
-			Panic("config must contain interval field")
-	}
-
-	interval, err := time.ParseDuration(value)
-	if err != nil {
-		log.With(zap.Error(err)).Panic("failed to parse interval")
-	}
-
-	sc := scheduler.NewScheduler(interval)
-
-	return sc
-}
-
-func handleStop(sc *scheduler.Scheduler, b *tb.Bot, log *zap.Logger) {
+func handleStop(b *tb.Bot, log *zap.Logger) {
 	termChan := make(chan os.Signal)
 	signal.Notify(termChan, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 
@@ -159,7 +152,6 @@ func handleStop(sc *scheduler.Scheduler, b *tb.Bot, log *zap.Logger) {
 		s := <-termChan
 		log.With(zap.Stringer("signal", s)).Info("received signal. terminating...")
 		b.Stop()
-		sc.Stop()
 	}()
 }
 
@@ -215,4 +207,24 @@ func migrate(dsn string) error {
 	}
 
 	return nil
+}
+
+func getService(cfg ini.File, log *zap.Logger, repo repository.Repository) service.Service {
+	value, ok := cfg.Get("scheduler", "interval")
+	if !ok {
+		log.
+			Named("config").
+			With(
+				zap.String("section", "scheduler"),
+			).
+			Panic("config must contain interval field")
+	}
+
+	interval, err := time.ParseDuration(value)
+	if err != nil {
+		log.With(zap.Error(err)).Panic("failed to parse interval")
+	}
+
+	srv := service.NewService(repo, interval)
+	return srv
 }
