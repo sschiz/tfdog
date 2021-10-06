@@ -8,12 +8,11 @@ import (
 	"syscall"
 	"time"
 
-	"git.sr.ht/~mcldresner/tfdog/service"
-	"git.sr.ht/~mcldresner/tfdog/transport/bot"
-
 	"git.sr.ht/~mcldresner/tfdog/config"
 	"git.sr.ht/~mcldresner/tfdog/logger"
 	"git.sr.ht/~mcldresner/tfdog/repository"
+	"git.sr.ht/~mcldresner/tfdog/service"
+	"git.sr.ht/~mcldresner/tfdog/transport/bot"
 	"git.sr.ht/~mcldresner/tfdog/version"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/vaughan0/go-ini"

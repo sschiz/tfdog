@@ -3,9 +3,8 @@ package bot
 import (
 	"time"
 
-	"git.sr.ht/~mcldresner/tfdog/service"
-
 	"git.sr.ht/~mcldresner/tfdog/middleware"
+	"git.sr.ht/~mcldresner/tfdog/service"
 	tb "gopkg.in/tucnak/telebot.v2"
 )
 
