@@ -1,4 +1,4 @@
-package tfbeta
+package beta
 
 import (
 	"bytes"
@@ -34,17 +34,20 @@ var (
 )
 var re = regexp.MustCompile(`the (.*) beta`)
 
-// TFBeta is TestFlight beta.
+// Beta is TestFlight beta.
 // It helps to check whether beta is full.
-// Also, TFBeta helps to get an app name that beta belongs.
-type TFBeta struct {
+// Also, Beta helps to get an app name that beta belongs.
+type Beta struct {
 	link    string
 	appName string
+
+	client *http.Client
+	req    *http.Request
 }
 
 // NewTFBeta returns new TestFlight beta.
 // ErrInvalidTestFlightLink can be returned if link is invalid.
-func NewTFBeta(link string) (*TFBeta, error) {
+func NewTFBeta(link string) (*Beta, error) {
 	if !isValid(link) {
 		return nil, ErrInvalidTestFlightLink
 	}
@@ -54,18 +57,25 @@ func NewTFBeta(link string) (*TFBeta, error) {
 		return nil, ErrInvalidTestFlightLink
 	}
 
-	return &TFBeta{link: link, appName: appName}, nil
+	req, err := http.NewRequest(http.MethodGet, link, nil)
+	if err != nil {
+		panic(err)
+	}
+
+	return &Beta{
+		link:    link,
+		appName: appName,
+		client:  http.DefaultClient,
+		req:     req,
+	}, nil
 }
 
 // IsFull returns whether beta is full or not.
-func (r *TFBeta) IsFull() (bool, error) {
-	resp, err := http.Get(r.link)
+func (r *Beta) IsFull() (bool, error) {
+	resp, err := r.client.Do(r.req)
 	if err != nil {
-		return false, fmt.Errorf("%s: %w", ErrUnexpected, err)
+		return false, err
 	}
-	defer func(body io.ReadCloser) {
-		_ = body.Close()
-	}(resp.Body)
 
 	if resp.StatusCode != http.StatusOK {
 		return false, ErrStatusNotOK
@@ -81,13 +91,19 @@ func (r *TFBeta) IsFull() (bool, error) {
 }
 
 // GetAppName returns app name that beta belongs.
-func (r *TFBeta) GetAppName() string {
+func (r *Beta) GetAppName() string {
 	return r.appName
 }
 
 // GetLink returns beta link.
-func (r *TFBeta) GetLink() string {
+func (r *Beta) GetLink() string {
 	return r.link
+}
+
+// WithClient overrides HTTP client.
+func (r *Beta) WithClient(client *http.Client) *Beta {
+	r.client = client
+	return r
 }
 
 func isValid(link string) bool {

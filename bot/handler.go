@@ -3,8 +3,8 @@ package bot
 import (
 	"fmt"
 
+	"git.sr.ht/~mcldresner/tfdog/beta"
 	"git.sr.ht/~mcldresner/tfdog/scheduler"
-	"git.sr.ht/~mcldresner/tfdog/tfbeta"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 	tb "gopkg.in/tucnak/telebot.v2"
@@ -37,17 +37,17 @@ func (h *handler) Subscribe(m *tb.Message) error {
 		return nil
 	}
 
-	beta, err := tfbeta.NewTFBeta(m.Payload)
+	tfBeta, err := beta.NewTFBeta(m.Payload)
 	if err != nil {
 		zap.L().With(zap.Error(err)).Error("failed to create beta")
 		return err
 	}
-	name := beta.GetAppName()
+	name := tfBeta.GetAppName()
 
 	bot := h.bot
 	sender := tb.ChatID(m.Chat.ID)
 	id, err := h.sch.Schedule(func() {
-		isFull, err := beta.IsFull()
+		isFull, err := tfBeta.IsFull()
 		if err != nil {
 			_, _ = bot.Send(sender, "error occurred: "+err.Error())
 			zap.L().With(zap.Error(err)).Error("failed to check beta")
@@ -59,8 +59,8 @@ func (h *handler) Subscribe(m *tb.Message) error {
 				sender,
 				fmt.Sprintf(
 					"✅ [%s](%s) beta has free slots!",
-					beta.GetAppName(),
-					beta.GetLink(),
+					tfBeta.GetAppName(),
+					tfBeta.GetLink(),
 				),
 				tb.NoPreview,
 				tb.ModeMarkdown,
@@ -80,8 +80,8 @@ func (h *handler) Subscribe(m *tb.Message) error {
 		sender,
 		fmt.Sprintf(
 			"⚡️ You have been subscribed [%s](%s) beta",
-			beta.GetAppName(),
-			beta.GetLink(),
+			tfBeta.GetAppName(),
+			tfBeta.GetLink(),
 		),
 		tb.NoPreview,
 		tb.ModeMarkdown,
