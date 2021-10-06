@@ -7,7 +7,7 @@ import (
 )
 
 // NewBetaPayload returns beta payload.
-func NewBetaPayload(b *tb.Bot, chat tb.ChatID) func(*beta.Beta) {
+func NewBetaPayload(b *tb.Bot, user *tb.User) func(*beta.Beta) {
 	return func(beta *beta.Beta) {
 		logger := zap.L().
 			Named("beta_payload").
@@ -31,7 +31,7 @@ func NewBetaPayload(b *tb.Bot, chat tb.ChatID) func(*beta.Beta) {
 
 		text := "✅ [" + beta.GetAppName() + "](" + beta.GetLink() + ") beta has free slots!"
 		_, err = b.Send(
-			chat,
+			user,
 			text,
 			tb.NoPreview,
 			tb.ModeMarkdown,

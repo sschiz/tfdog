@@ -22,7 +22,7 @@ func (h *handler) Subscribe(m *tb.Message) {
 		Named("handler").
 		With(zap.String("command", "subscribe"))
 
-	payload := NewBetaPayload(h.bot, tb.ChatID(m.Chat.ID))
+	payload := NewBetaPayload(h.bot, m.Sender)
 	err := h.srv.Subscribe(m.Sender.ID, m.Payload, payload)
 	if err == nil || !errors.Is(err, service.ErrAlreadySubscribed) {
 		return
