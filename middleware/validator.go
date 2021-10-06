@@ -18,9 +18,22 @@ func WithValidator() Middleware {
 }
 
 func validateMessage(m *tb.Message) bool {
-	condition := m.Private() && !m.Sender.IsBot
-	if strings.HasPrefix(m.Text, "/subscribe") {
-		condition = condition && len(m.Payload) != 0
+	if !m.Private() && m.Sender.IsBot {
+		return false
 	}
-	return condition
+
+	if !strings.HasPrefix(m.Text, "/subscribe") {
+		return true
+	}
+
+	if len(m.Entities) != 2 {
+		return false
+	}
+
+	entity := m.Entities[1]
+	if entity.Type != tb.EntityURL {
+		return false
+	}
+
+	return true
 }
