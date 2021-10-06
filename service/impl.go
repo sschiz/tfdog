@@ -129,18 +129,13 @@ func (s *srv) GetUserSubscriptions(userID int) ([]Subscription, error) {
 	logger.Info("got request")
 	defer logger.Debug("done")
 
-	repoSubs, err := s.repo.GetUserSubscriptions(userID)
+	subs, err := s.repo.GetUserSubscriptions(userID)
 	if err != nil {
 		logger.With(zap.Error(err)).Error("failed to get user subscriptions")
 		return nil, err
 	}
 
-	subs := make([]Subscription, len(repoSubs))
-	for i, sub := range repoSubs {
-		subs[i].Subscription = sub
-	}
-
-	return subs, nil
+	return castSubscriptions(subs), nil
 }
 
 func (s *srv) Close() error {
@@ -165,4 +160,13 @@ func (s *srv) isSubscribed(userID int, link string) (bool, error) {
 	}
 
 	return isSubscribed, nil
+}
+
+func castSubscriptions(repoSubs []repository.Subscription) []Subscription {
+	subs := make([]Subscription, len(repoSubs))
+	for i, sub := range repoSubs {
+		subs[i].Subscription = sub
+	}
+
+	return subs
 }
