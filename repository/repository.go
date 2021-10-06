@@ -1,5 +1,7 @@
 package repository
 
+import "io"
+
 // Repository describes a storage
 // to save user subscriptions.
 type Repository interface {
@@ -7,6 +9,8 @@ type Repository interface {
 	RemoveSubscription(sub Subscription) error
 	GetUserSubscriptions(userID int) ([]Subscription, error)
 	GetAllSubscriptions() ([]Subscription, error)
+
+	io.Closer
 }
 
 // Subscription describes user subscription.
