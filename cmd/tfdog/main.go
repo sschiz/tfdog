@@ -8,6 +8,8 @@ import (
 	"syscall"
 	"time"
 
+	"git.sr.ht/~mcldresner/tfdog/recovery"
+
 	"git.sr.ht/~mcldresner/tfdog/config"
 	"git.sr.ht/~mcldresner/tfdog/logger"
 	"git.sr.ht/~mcldresner/tfdog/repository"
@@ -45,6 +47,7 @@ func main() {
 
 	b := getBot(cfg, log, srv)
 
+	recoveryFromRepository(srv, repo, b, log)
 	handleStop(b, log)
 
 	log.Info("starting...")
@@ -226,4 +229,11 @@ func getService(cfg ini.File, log *zap.Logger, repo repository.Repository) servi
 
 	srv := service.NewService(repo, interval)
 	return srv
+}
+
+func recoveryFromRepository(srv service.Service, repo repository.Repository, b *tb.Bot, log *zap.Logger) {
+	err := recovery.ServiceFromRepository(srv, repo, b)
+	if err != nil {
+		log.With(zap.Error(err)).Panic("failed to recovery service from repository")
+	}
 }
