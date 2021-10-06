@@ -23,7 +23,6 @@ var (
 type srv struct {
 	sc        *gocron.Scheduler // scheduler will be started after first subscription
 	isStarted *atomic.Bool
-	interval  time.Duration
 
 	repo   repository.Repository
 	logger *zap.Logger
@@ -32,10 +31,9 @@ type srv struct {
 // NewService new Service instance.
 func NewService(repo repository.Repository, interval time.Duration) Service {
 	return &srv{
-		sc:        gocron.NewScheduler(time.UTC),
+		sc:        gocron.NewScheduler(time.UTC).Every(interval),
 		isStarted: atomic.NewBool(false),
 		repo:      repo,
-		interval:  interval,
 		logger:    zap.L().Named("service"),
 	}
 }
