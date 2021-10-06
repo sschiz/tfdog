@@ -10,7 +10,7 @@ import (
 // Service describes subscription service.
 // It will be periodically do payload.
 type Service interface {
-	Subscribe(userID int, link string, payload func(*beta.Beta)) (string, error)
+	Subscribe(userID int, link string, payload func(*beta.Beta)) error
 	Unsubscribe(userID int, link string) error
 	GetUserSubscriptions(userID int) ([]Subscription, error)
 
