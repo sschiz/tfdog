@@ -9,6 +9,7 @@ type Repository interface {
 	RemoveSubscription(sub Subscription) error
 	GetUserSubscriptions(userID int) ([]Subscription, error)
 	GetAllSubscriptions() ([]Subscription, error)
+	DeleteAllSubscriptions() error
 
 	io.Closer
 }

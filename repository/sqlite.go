@@ -101,6 +101,16 @@ func (s *sqliteRepo) GetAllSubscriptions() ([]Subscription, error) {
 	return res, nil
 }
 
+func (s *sqliteRepo) DeleteAllSubscriptions() error {
+	const query = `DELETE FROM subscriptions`
+	_, err := s.db.Exec(query)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (s *sqliteRepo) Close() error {
 	return s.db.Close()
 }
