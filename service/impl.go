@@ -44,7 +44,7 @@ func (s *srv) Subscribe(userID int, link string, payload func(*beta.Beta)) error
 		With(zap.Int("user_id", userID)).
 		With(zap.String("link", link))
 
-	logger.Info("got request")
+	logger.Debug("got request")
 	defer logger.Debug("done")
 
 	isSubscribed, err := s.isSubscribed(userID, link)
@@ -96,7 +96,7 @@ func (s *srv) Unsubscribe(userID int, link string) error {
 		With(zap.Int("user_id", userID)).
 		With(zap.String("link", link))
 
-	logger.Info("got request")
+	logger.Debug("got request")
 	defer logger.Debug("done")
 
 	err := s.sc.RemoveByTag(strconv.Itoa(userID) + link)
@@ -124,7 +124,7 @@ func (s *srv) GetUserSubscriptions(userID int) ([]Subscription, error) {
 		With(zap.String("method", "get_user_subscriptions")).
 		With(zap.Int("user_id", userID))
 
-	logger.Info("got request")
+	logger.Debug("got request")
 	defer logger.Debug("done")
 
 	subs, err := s.repo.GetUserSubscriptions(userID)
