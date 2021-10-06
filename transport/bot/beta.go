@@ -6,7 +6,7 @@ import (
 	tb "gopkg.in/tucnak/telebot.v2"
 )
 
-func newBetaPayload(b *tb.Bot, user *tb.User) func(*beta.Beta) {
+func newBetaPayload(b *tb.Bot, chat tb.ChatID) func(*beta.Beta) {
 	return func(beta *beta.Beta) {
 		logger := zap.L().
 			Named("beta_payload").
@@ -30,7 +30,7 @@ func newBetaPayload(b *tb.Bot, user *tb.User) func(*beta.Beta) {
 
 		text := "✅ [" + beta.GetAppName() + "](" + beta.GetLink() + ") beta has free slots!"
 		_, err = b.Send(
-			user,
+			chat,
 			text,
 			tb.NoPreview,
 			tb.ModeMarkdown,
