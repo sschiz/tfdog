@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"os"
 	"os/signal"
 	"strings"
@@ -10,8 +11,10 @@ import (
 	"git.sr.ht/~mcldresner/tfdog/bot"
 	"git.sr.ht/~mcldresner/tfdog/config"
 	"git.sr.ht/~mcldresner/tfdog/logger"
+	"git.sr.ht/~mcldresner/tfdog/repository"
 	"git.sr.ht/~mcldresner/tfdog/scheduler"
 	"git.sr.ht/~mcldresner/tfdog/version"
+	_ "github.com/mattn/go-sqlite3"
 	"github.com/vaughan0/go-ini"
 	"go.uber.org/zap"
 	tb "gopkg.in/tucnak/telebot.v2"
@@ -26,6 +29,7 @@ func main() {
 
 	sc := getScheduler(cfg, log)
 	b := getBot(cfg, log, sc)
+	_ = getRepository(cfg, log)
 
 	handleStop(sc, b, log)
 
@@ -157,4 +161,58 @@ func handleStop(sc *scheduler.Scheduler, b *tb.Bot, log *zap.Logger) {
 		b.Stop()
 		sc.Stop()
 	}()
+}
+
+func getRepository(cfg ini.File, log *zap.Logger) repository.Repository {
+	dsn, ok := cfg.Get("database", "data_source_name")
+	if !ok {
+		log.
+			Named("config").
+			With(zap.String("section", "database")).
+			Panic("config must contain data_source_name field")
+	}
+
+	err := migrate(dsn)
+	if err != nil {
+		log.
+			Named("migration").
+			With(zap.Error(err)).
+			Panic("failed to migrate database")
+	}
+
+	repo, err := repository.NewSqliteRepository(dsn)
+	if err != nil {
+		log.
+			Named("repository").
+			With(zap.Error(err)).
+			Panic("failed to create new sqlite repo")
+	}
+
+	return repo
+}
+
+const migrateQuery = `
+CREATE TABLE IF NOT EXISTS subscriptions
+(
+    user_id  int,
+    app_name text,
+    link     text
+);
+`
+
+func migrate(dsn string) error {
+	db, err := sql.Open("sqlite3", dsn)
+	if err != nil {
+		return err
+	}
+	defer func(db *sql.DB) {
+		_ = db.Close()
+	}(db)
+
+	_, err = db.Exec(migrateQuery)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

@@ -5,6 +5,7 @@ go 1.17
 require (
 	github.com/go-co-op/gocron v1.9.0
 	github.com/google/uuid v1.3.0
+	github.com/mattn/go-sqlite3 v1.14.8
 	github.com/vaughan0/go-ini v0.0.0-20130923145212-a98ad7ee00ec
 	go.uber.org/zap v1.19.1
 	golang.org/x/net v0.0.0-20210929193557-e81a3d93ecf6
