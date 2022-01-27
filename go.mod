@@ -3,13 +3,13 @@ module git.sr.ht/~mcldresner/tfdog
 go 1.17
 
 require (
-	github.com/go-co-op/gocron v1.9.0
-	github.com/mattn/go-sqlite3 v1.14.8
+	github.com/go-co-op/gocron v1.11.0
+	github.com/mattn/go-sqlite3 v1.14.10
 	github.com/vaughan0/go-ini v0.0.0-20130923145212-a98ad7ee00ec
 	go.uber.org/atomic v1.9.0
-	go.uber.org/zap v1.19.1
-	golang.org/x/net v0.0.0-20210929193557-e81a3d93ecf6
-	gopkg.in/tucnak/telebot.v2 v2.4.0
+	go.uber.org/zap v1.20.0
+	golang.org/x/net v0.0.0-20220127074510-2fabfed7e28f
+	gopkg.in/tucnak/telebot.v2 v2.5.0
 )
 
 require (

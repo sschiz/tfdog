@@ -23,7 +23,7 @@ func (h *handler) Subscribe(m *tb.Message) {
 		With(zap.String("command", "subscribe"))
 
 	payload := NewBetaPayload(h.bot, m.Sender)
-	err := h.srv.Subscribe(m.Sender.ID, m.Payload, payload)
+	err := h.srv.Subscribe(int(m.Sender.ID), m.Payload, payload)
 	if err != nil {
 		if errors.Is(err, service.ErrAlreadySubscribed) {
 			_, err = h.bot.Send(m.Sender, "You have already subscribed this beta.")
@@ -53,7 +53,7 @@ func (h *handler) Unsubscribe(m *tb.Message) {
 		Named("handler").
 		With(zap.String("command", "unsubscribe"))
 
-	keyboard, err := h.generateDeletionKeyboard(m.Sender.ID)
+	keyboard, err := h.generateDeletionKeyboard(int(m.Sender.ID))
 	if err != nil {
 		return
 	}
@@ -82,14 +82,14 @@ func (h *handler) UnsubscribeInline(c *tb.Callback) {
 		}
 	}(h.bot, c, resp)
 
-	err := h.srv.Unsubscribe(c.Sender.ID, c.Data)
+	err := h.srv.Unsubscribe(int(c.Sender.ID), c.Data)
 	if err != nil {
 		return
 	}
 	resp.Text = "Successfully unsubscribed"
 	resp.ShowAlert = false
 
-	keyboard, err := h.generateDeletionKeyboard(c.Sender.ID)
+	keyboard, err := h.generateDeletionKeyboard(int(c.Sender.ID))
 	if err != nil {
 		return
 	}

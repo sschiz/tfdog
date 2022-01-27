@@ -23,7 +23,7 @@ func ServiceFromRepository(srv service.Service, repo repository.Repository, b *t
 	}
 
 	for _, sub := range subs {
-		payload := bot.NewBetaPayload(b, &tb.User{ID: sub.UserID})
+		payload := bot.NewBetaPayload(b, &tb.User{ID: int64(sub.UserID)})
 		err = srv.Subscribe(sub.UserID, sub.Link, payload)
 		if err != nil {
 			return err
